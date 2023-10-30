@@ -8,3 +8,5 @@ wheels/
 
 # venv
 .venv
+requirements-dev.lock
+requirements.lock
