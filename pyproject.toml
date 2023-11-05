@@ -23,4 +23,4 @@ dev-dependencies = []
 allow-direct-references = true
 
 [project.scripts]
-my-hello-script = 'essentials_of_compilation.hello:main'
+ch1 = 'essentials_of_compilation.ch1:main'
