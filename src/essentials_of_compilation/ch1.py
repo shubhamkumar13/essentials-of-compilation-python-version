@@ -69,37 +69,6 @@ def leaf(arith):
         case BinOp(e1, Sub(), e2):
             return False
 
-def is_exp(e):
-    match e:
-        case Constant(n):
-            return True
-        case Call(Name('input_int'), []):
-            return True
-        case UnaryOp(USub(), e1):
-            return is_exp(e1)
-        case BinOp(e1, Add(), e2):
-            return (is_exp(e1) and is_exp(e2))
-        case BinOp(e1, Sub(), e2):
-            return (is_exp(e1) and is_exp(e2))
-        case _:
-            return False
-
-def is_stmt(s):
-    match s:
-        case Expr(Call(Name('print'), [e])):
-            return is_exp(e)
-        case Expr(e):
-            return is_exp(e)
-        case _:
-            return False
-
-def is_Lint(p):
-    match p:
-        case Module(body):
-            return all([is_stmt(s) for s in body])
-        case _:
-            return False
-
 def add64(left : int, right : int) -> int:
     return left + right
 
@@ -112,35 +81,68 @@ def neg64(value : int) -> int:
 def input_int() -> int:
     return int(stdin.readline())
 
-def interp_exp(e):
-    match e:
-        case BinOp(left, Add(), right):
-            left  = interp_exp(left)
-            right = interp_exp(right)
-            return add64(left, right)
-        case BinOp(left, Sub(), right):
-            left = interp_exp(left)
-            right = interp_exp(right)
-            return sub64(left, right)
-        case UnaryOp(USub(), v):
-            return neg64(interp_exp(v))
-        case Constant(value):
-            return value
-        case Call(Name('input_int'), []):
-            return input_int()
+class CheckEvaluator:
+    def is_exp(self, e):
+        match e:
+            case Constant(n):
+                return True
+            case Call(Name('input_int'), []):
+                return True
+            case UnaryOp(USub(), e1):
+                return self.is_exp(e1)
+            case BinOp(e1, Add(), e2):
+                return (self.is_exp(e1) and self.is_exp(e2))
+            case BinOp(e1, Sub(), e2):
+                return (self.is_exp(e1) and self.is_exp(e2))
+            case _:
+                return False
 
-def interp_stmt(s):
-    match s:
-        case Expr(Call(Name('print'), [arg])):
-            print(interp_exp(arg))
-        case Expr(value):
-            interp_exp(value)
+    def is_stmt(self, s):
+        match s:
+            case Expr(Call(Name('print'), [e])):
+                return self.is_exp(e)
+            case Expr(e):
+                return self.is_exp(e)
+            case _:
+                return False
 
-def interp_Lint(p):
-    match p:
-        case Module(body):
-            for s in body:
-                interp_stmt(s)
+    def is_Lint(self, p):
+        match p:
+            case Module(body):
+                return all([self.is_stmt(s) for s in body])
+            case _:
+                return False
+
+class Eval:
+    def interp_exp(self, e):
+        match e:
+            case BinOp(left, Add(), right):
+                left  = self.interp_exp(left)
+                right = self.interp_exp(right)
+                return add64(left, right)
+            case BinOp(left, Sub(), right):
+                left = self.interp_exp(left)
+                right = self.interp_exp(right)
+                return sub64(left, right)
+            case UnaryOp(USub(), v):
+                return neg64(self.interp_exp(v))
+            case Constant(value):
+                return value
+            case Call(Name('input_int'), []):
+                return input_int()
+
+    def interp_stmt(self, s):
+        match s:
+            case Expr(Call(Name('print'), [arg])):
+                print(self.interp_exp(arg))
+            case Expr(value):
+                self.interp_exp(value)
+
+    def interp_Lint(self, p):
+        match p:
+            case Module(body):
+                for s in body:
+                    self.interp_stmt(s)
 
 # def check_Lint():
 #     read = Call(Name('input_int'), [])
