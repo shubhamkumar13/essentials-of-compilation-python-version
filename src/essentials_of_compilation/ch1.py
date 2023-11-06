@@ -113,12 +113,12 @@ class CheckEvaluator:
             case _:
                 return False
 
-class Eval:
-    def interp_exp(self, e):
+class InterpLint:
+    def interp_exp(self, e, env):
         match e:
             case BinOp(left, Add(), right):
-                left  = self.interp_exp(left)
-                right = self.interp_exp(right)
+                left  = self.interp_exp(left, env)
+                right = self.interp_exp(right, env)
                 return add64(left, right)
             case BinOp(left, Sub(), right):
                 left = self.interp_exp(left)
@@ -131,18 +131,33 @@ class Eval:
             case Call(Name('input_int'), []):
                 return input_int()
 
-    def interp_stmt(self, s):
+    def interp_stmt(self, s, env, cont):
         match s:
             case Expr(Call(Name('print'), [arg])):
-                print(self.interp_exp(arg))
+                val = self.interp_exp(arg, env)
+                print(val, end='')
+                return self.interp_stmts(cont, env)
             case Expr(value):
-                self.interp_exp(value)
-
-    def interp_Lint(self, p):
+                self.interp_exp(value, env)
+                return self.interp_stmts(cont, env)
+            case _:
+                raise Exception('error in interp_stmt, unexpected' + repr(s))
+    
+    def interp_stmts(self, ss, env):
+        match ss:
+            case []:
+                return 0
+            case [s, *ss]:
+                return self.interp_stmt(s, env, ss)
+    
+    def interp(self, p):
         match p:
             case Module(body):
-                for s in body:
-                    self.interp_stmt(s)
+                self.interp_stmts(body, {})
+
+
+def interp_Lint(p):
+    return InterpLint().interp(p)
 
 # def check_Lint():
 #     read = Call(Name('input_int'), [])
